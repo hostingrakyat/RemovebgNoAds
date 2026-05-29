@@ -68,9 +68,12 @@ android {
 
     buildTypes {
         release {
-            // Sign with upload key when present; otherwise leave the build UNSIGNED.
-            // Do NOT fall back to debug signing.
-            signingConfig = hasKeystore ? signingConfigs.release : null
+            // Sign with the upload key when the CI secret is present (proper
+            // release signing). Otherwise fall back to DEBUG signing so the
+            // APK is still installable for sideloading — an UNSIGNED APK is
+            // rejected by Android with "invalid package". The debug key is
+            // stable across builds, so in-place updates keep working.
+            signingConfig = hasKeystore ? signingConfigs.release : signingConfigs.debug
             minifyEnabled = false
             shrinkResources = false
         }

@@ -50,12 +50,15 @@ push to the working branch and on manual dispatch. Both files are uploaded as
 workflow artifacts and attached to a GitHub Release.
 
 ### Signing
-- Run **Generate Keystore** (`.github/workflows/generate-keystore.yml`) once and
-  copy the four printed values into repository secrets:
-  `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`.
-- With those secrets set, the release is **signed**.
-- With **no** keystore present, the release builds **unsigned** (it does *not*
-  fall back to debug signing) so you can sign it yourself later.
+- With release keystore secrets set, the release is signed with your **upload
+  key** (proper, Play-Store-ready). Run **Generate Keystore**
+  (`.github/workflows/generate-keystore.yml`) once and copy the four printed
+  values into repository secrets: `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`,
+  `KEY_ALIAS`, `KEY_PASSWORD`.
+- With **no** keystore secret, the release falls back to **debug signing** so
+  the APK is still installable for sideloading. (An *unsigned* APK is rejected
+  by Android with "invalid package", which is why the fallback signs with the
+  stable debug key rather than leaving it unsigned.)
 
 ## Credits
 Created by: **Ir. Riovan Styx Roring**

@@ -71,18 +71,34 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   Future<void> _process() async {
-    setState(() => _stage = _Stage.preparing);
+    setState(() => _stage = _Stage.removing);
     try {
       _originalBytes = await File(widget.imagePath).readAsBytes();
       final prepared = await Composer.prepare(_originalBytes);
       _prepared = prepared;
 
       setState(() => _stage = _Stage.removing);
-      final mask = await _seg.segment(
-        widget.imagePath,
-        imageWidth: prepared.width,
-        imageHeight: prepared.height,
-      );
+
+      // The ML Kit subject-segmentation model downloads once on first use
+      // (needs internet that one time). Retry a few times with backoff while
+      // it finishes downloading, showing a "preparing model" state.
+      MaskData? mask;
+      var attempt = 0;
+      while (true) {
+        try {
+          mask = await _seg.segment(
+            widget.imagePath,
+            imageWidth: prepared.width,
+            imageHeight: prepared.height,
+          );
+          break;
+        } catch (e) {
+          attempt++;
+          if (attempt >= 4) rethrow;
+          if (mounted) setState(() => _stage = _Stage.preparing);
+          await Future.delayed(Duration(seconds: 2 * attempt));
+        }
+      }
       if (mask == null) {
         setState(() => _stage = _Stage.noSubject);
         return;
@@ -296,7 +312,7 @@ class _EditorScreenState extends State<EditorScreen> {
   Widget _body() {
     switch (_stage) {
       case _Stage.preparing:
-        return _status(tr('removing_bg'), spinner: true);
+        return _status(tr('preparing_model'), spinner: true);
       case _Stage.removing:
         return _status(tr('removing_bg'), spinner: true);
       case _Stage.error:

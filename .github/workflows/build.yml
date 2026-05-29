@@ -110,7 +110,7 @@ jobs:
             Free · No Ads · Offline · HD background remover.
 
             Attached: release APK + AAB.
-            (Unsigned unless signing secrets are configured — install via "allow from unknown sources".)
+            (Debug-signed unless release signing secrets are configured — install the APK via "allow from unknown sources".)
           files: dist/*
           draft: false
           prerelease: false
