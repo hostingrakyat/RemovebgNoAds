@@ -12,8 +12,12 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
 
-  # On-device segmentation (Google ML Kit Subject Segmentation)
-  google_mlkit_subject_segmentation: ^0.0.3
+  # On-device segmentation (Google ML Kit Subject Segmentation).
+  # Pinned to 0.0.2: 0.0.3 requires Dart >=3.8 (Flutter >=3.32), but our proven
+  # stack is Flutter 3.24.5 / Dart 3.5.4. commons is forced to 0.11.0 for the
+  # same reason (0.11.1 requires Dart >=3.8). The API is identical.
+  google_mlkit_subject_segmentation: 0.0.2
+  google_mlkit_commons: 0.11.0
 
   # Image composition / mask->alpha / PNG-JPG encode
   image: ^4.2.0
