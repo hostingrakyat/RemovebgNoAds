@@ -46,9 +46,10 @@ jobs:
           set -euo pipefail
           curl -sLO https://services.gradle.org/distributions/gradle-8.7-bin.zip
           unzip -q gradle-8.7-bin.zip
-          # Generate the wrapper in an empty dir so it never evaluates the
-          # Flutter settings.gradle, then copy the files into android/.
+          # Generate the wrapper in a throwaway minimal Gradle build so it
+          # never evaluates the Flutter settings.gradle, then copy into android/.
           mkdir -p /tmp/wrap
+          echo "rootProject.name = 'wrap'" > /tmp/wrap/settings.gradle
           (cd /tmp/wrap && "$GITHUB_WORKSPACE/gradle-8.7/bin/gradle" wrapper --gradle-version 8.7 --distribution-type bin)
           mkdir -p android/gradle/wrapper
           cp /tmp/wrap/gradlew android/gradlew
