@@ -1,0 +1,50 @@
+name: removebgnoads
+description: "Removebg No Ads — free, offline, on-device background remover. HD output. No ads. Forever."
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # On-device segmentation (Google ML Kit Subject Segmentation)
+  google_mlkit_subject_segmentation: ^0.0.3
+
+  # Image composition / mask->alpha / PNG-JPG encode
+  image: ^4.2.0
+
+  # Pick from gallery / capture from camera
+  image_picker: ^1.1.2
+
+  # Save to device gallery
+  gal: ^2.3.0
+
+  # Share output
+  share_plus: ^10.0.2
+
+  # Runtime permissions (camera + photos)
+  permission_handler: ^11.3.1
+
+  # File paths / recents storage
+  path_provider: ^2.1.4
+  path: ^1.9.0
+
+  # Open social links
+  url_launcher: ^6.3.0
+
+  # Persist language + recents index
+  shared_preferences: ^2.3.2
+
+  # Solid-color background picker
+  flutter_colorpicker: ^1.1.0
+
+dev_dependencies:
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true

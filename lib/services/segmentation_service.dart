@@ -1,0 +1,82 @@
+import 'dart:typed_data';
+
+import 'package:google_mlkit_subject_segmentation/google_mlkit_subject_segmentation.dart';
+
+/// Result of running ML Kit subject segmentation:
+/// a foreground confidence mask (0..1) plus the grid dimensions it maps to.
+class MaskData {
+  MaskData({required this.mask, required this.width, required this.height});
+
+  /// Confidence per cell, row-major, length == width * height.
+  final Float32List mask;
+  final int width;
+  final int height;
+}
+
+/// Wraps ML Kit Subject Segmentation. Fully on-device after the one-time
+/// model download (handled by Google Play Services on first use).
+class SegmentationService {
+  SegmentationService();
+
+  final SubjectSegmenter _segmenter = SubjectSegmenter(
+    options: SubjectSegmenterOptions(
+      enableForegroundBitmap: false,
+      enableForegroundConfidenceMask: true,
+      enableMultipleSubjects: SubjectResultOptions(
+        enableConfidenceMask: false,
+        enableSubjectBitmap: false,
+      ),
+    ),
+  );
+
+  /// Runs segmentation on the image file.
+  ///
+  /// [imageWidth]/[imageHeight] are the decoded original dimensions, used to
+  /// infer the mask grid. The foreground confidence mask is the same size as
+  /// the input image; if a device returns a different count we recover the
+  /// grid from the count and the image aspect ratio.
+  ///
+  /// Returns null when no subject is detected.
+  Future<MaskData?> segment(
+    String imagePath, {
+    required int imageWidth,
+    required int imageHeight,
+  }) async {
+    final input = InputImage.fromFilePath(imagePath);
+    final result = await _segmenter.processImage(input);
+    final confidence = result.foregroundConfidenceMask;
+    if (confidence == null || confidence.isEmpty) return null;
+
+    final mask = Float32List.fromList(confidence);
+
+    int w = imageWidth;
+    int h = imageHeight;
+    if (mask.length != imageWidth * imageHeight) {
+      // Recover the grid from the count keeping the image aspect ratio.
+      final aspect = imageWidth / imageHeight;
+      w = _approxWidth(mask.length, aspect);
+      h = (mask.length / w).round().clamp(1, mask.length);
+    }
+    return MaskData(mask: mask, width: w, height: h);
+  }
+
+  int _approxWidth(int count, double aspect) {
+    // count = w * h, w = aspect * h  => w = sqrt(count * aspect)
+    final w = (count * aspect);
+    final root = _isqrt(w.round());
+    return root.clamp(1, count);
+  }
+
+  int _isqrt(int n) {
+    if (n <= 0) return 1;
+    var x = n;
+    var y = (x + 1) >> 1;
+    while (y < x) {
+      x = y;
+      y = (x + n ~/ x) >> 1;
+    }
+    return x;
+  }
+
+  void dispose() => _segmenter.close();
+}

@@ -1,0 +1,82 @@
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    id "dev.flutter.flutter-gradle-plugin"
+}
+
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader("UTF-8") { reader ->
+        localProperties.load(reader)
+    }
+}
+
+def flutterVersionCode = localProperties.getProperty("flutter.versionCode")
+if (flutterVersionCode == null) {
+    flutterVersionCode = "1"
+}
+
+def flutterVersionName = localProperties.getProperty("flutter.versionName")
+if (flutterVersionName == null) {
+    flutterVersionName = "1.0.0"
+}
+
+// Release keystore: only present when CI decodes the KEYSTORE_BASE64 secret.
+// If it does NOT exist, the release build is produced UNSIGNED (no debug fallback).
+def keystoreFile = file("upload-key.jks")
+def hasKeystore = keystoreFile.exists()
+
+android {
+    namespace = "com.riovanroring.removebgnoads"
+    compileSdk = 35
+    ndkVersion = flutter.ndkVersion
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
+    sourceSets {
+        main.java.srcDirs += "src/main/kotlin"
+    }
+
+    defaultConfig {
+        applicationId = "com.riovanroring.removebgnoads"
+        // ML Kit Subject Segmentation requires API 24+.
+        minSdk = 24
+        targetSdk = 35
+        versionCode = flutterVersionCode.toInteger()
+        versionName = flutterVersionName
+    }
+
+    signingConfigs {
+        if (hasKeystore) {
+            release {
+                storeFile = keystoreFile
+                storeType = "JKS"
+                storePassword = System.getenv("KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KEY_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            // Sign with upload key when present; otherwise leave the build UNSIGNED.
+            // Do NOT fall back to debug signing.
+            signingConfig = hasKeystore ? signingConfigs.release : null
+            minifyEnabled = false
+            shrinkResources = false
+        }
+    }
+}
+
+flutter {
+    source = "../.."
+}
