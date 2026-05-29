@@ -4,14 +4,15 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
-import 'package:gal/gal.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../l10n/strings.dart';
 import '../services/composer.dart';
+import '../services/gallery.dart';
 import '../services/recents_store.dart';
 import '../services/segmentation_service.dart';
 import '../widgets/checkerboard.dart';
@@ -226,9 +227,13 @@ class _EditorScreenState extends State<EditorScreen> {
     setState(() => _busy = true);
     try {
       final bytes = await _export();
-      await Gal.requestAccess();
-      await Gal.putImageBytes(bytes,
-          name: 'removebg_${DateTime.now().millisecondsSinceEpoch}');
+      // API 24–28 needs storage permission; on 29+ MediaStore needs none.
+      await Permission.storage.request();
+      await Gallery.save(
+        bytes,
+        name: 'removebg_${DateTime.now().millisecondsSinceEpoch}',
+        isPng: _isPng,
+      );
       await RecentsStore.save(bytes, isPng: _isPng);
       _toast(tr('saved_to_gallery'));
     } catch (_) {

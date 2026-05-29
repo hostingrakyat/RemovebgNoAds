@@ -25,8 +25,8 @@ dependencies:
   # Pick from gallery / capture from camera
   image_picker: ^1.1.2
 
-  # Save to device gallery
-  gal: ^2.3.0
+  # Save to device gallery: handled via a small MediaStore MethodChannel in
+  # MainActivity.kt (no plugin) — keeps the Flutter 3.24.5 gradle stack clean.
 
   # Share output
   share_plus: ^10.0.2

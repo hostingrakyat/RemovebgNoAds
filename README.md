@@ -36,9 +36,13 @@ tflite U2Net/MODNet model.
 - Material 3, `google()` + `mavenCentral()` only
 
 ## Key packages
-`google_mlkit_subject_segmentation`, `image`, `image_picker`, `gal`,
-`share_plus`, `permission_handler`, `path_provider`, `path`, `url_launcher`,
+`google_mlkit_subject_segmentation`, `image`, `image_picker`, `share_plus`,
+`permission_handler`, `path_provider`, `path`, `url_launcher`,
 `shared_preferences`, `flutter_colorpicker`.
+
+Saving to the gallery is done natively via a small MediaStore MethodChannel in
+`MainActivity.kt` (no third-party plugin) to keep the Gradle stack clean on
+Flutter 3.24.5.
 
 ## Building
 APK + AAB are built by GitHub Actions (`.github/workflows/build.yml`) on every
