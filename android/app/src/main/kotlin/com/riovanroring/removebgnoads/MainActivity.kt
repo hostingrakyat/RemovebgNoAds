@@ -5,13 +5,6 @@ import android.media.MediaScannerConnection
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
-import com.google.android.gms.common.moduleinstall.InstallStatusListener
-import com.google.android.gms.common.moduleinstall.ModuleInstall
-import com.google.android.gms.common.moduleinstall.ModuleInstallRequest
-import com.google.android.gms.common.moduleinstall.ModuleInstallStatusUpdate
-import com.google.mlkit.vision.segmentation.subject.SubjectSegmentation
-import com.google.mlkit.vision.segmentation.subject.SubjectSegmenter
-import com.google.mlkit.vision.segmentation.subject.SubjectSegmenterOptions
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -20,11 +13,6 @@ import java.io.FileOutputStream
 
 class MainActivity : FlutterActivity() {
     private val galleryChannel = "removebgnoads/gallery"
-    private val modelChannel = "removebgnoads/model"
-
-    // Model install progress: -1 unknown, 0..100 percent.
-    private var installProgress = -1
-    private var installFailed = false
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -51,75 +39,6 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
-
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, modelChannel)
-            .setMethodCallHandler { call, result ->
-                when (call.method) {
-                    "isModelAvailable" -> {
-                        try {
-                            val segmenter = buildSegmenter()
-                            ModuleInstall.getClient(this)
-                                .areModulesAvailable(segmenter)
-                                .addOnSuccessListener { resp ->
-                                    result.success(resp.areModulesAvailable())
-                                }
-                                .addOnFailureListener { result.success(false) }
-                        } catch (e: Exception) {
-                            result.success(false)
-                        }
-                    }
-                    "requestInstall" -> {
-                        try {
-                            installProgress = 0
-                            installFailed = false
-                            val segmenter = buildSegmenter()
-                            val client = ModuleInstall.getClient(this)
-                            val listener = object : InstallStatusListener {
-                                override fun onInstallStatusUpdated(
-                                    update: ModuleInstallStatusUpdate
-                                ) {
-                                    val info = update.progressInfo
-                                    if (info != null && info.totalBytesToDownload > 0) {
-                                        installProgress = (100 * info.bytesDownloaded /
-                                                info.totalBytesToDownload).toInt()
-                                    }
-                                    when (update.installState) {
-                                        ModuleInstallStatusUpdate.InstallState.STATE_COMPLETED -> {
-                                            installProgress = 100
-                                            client.unregisterListener(this)
-                                        }
-                                        ModuleInstallStatusUpdate.InstallState.STATE_FAILED -> {
-                                            installFailed = true
-                                            client.unregisterListener(this)
-                                        }
-                                    }
-                                }
-                            }
-                            val request = ModuleInstallRequest.newBuilder()
-                                .addApi(segmenter)
-                                .setListener(listener)
-                                .build()
-                            client.installModules(request)
-                                .addOnSuccessListener { installProgress = 100 }
-                                .addOnFailureListener { installFailed = true }
-                            result.success(true)
-                        } catch (e: Exception) {
-                            installFailed = true
-                            result.error("INSTALL_ERR", e.message, null)
-                        }
-                    }
-                    "installProgress" -> result.success(installProgress)
-                    "installFailed" -> result.success(installFailed)
-                    else -> result.notImplemented()
-                }
-            }
-    }
-
-    private fun buildSegmenter(): SubjectSegmenter {
-        val options = SubjectSegmenterOptions.Builder()
-            .enableForegroundConfidenceMask()
-            .build()
-        return SubjectSegmentation.getClient(options)
     }
 
     private fun saveImage(bytes: ByteArray, name: String, isPng: Boolean) {

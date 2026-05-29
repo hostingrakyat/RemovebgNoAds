@@ -1,6 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- One-time download of the ML Kit subject-segmentation model; offline thereafter -->
+    <!-- Segmentation runs fully offline (bundled ONNX model). INTERNET is kept
+         only for opening external social links via the browser. -->
     <uses-permission android:name="android.permission.INTERNET" />
 
     <!-- Camera capture -->
@@ -43,11 +44,6 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-
-        <!-- Auto-download the Subject Segmentation model after install (offline thereafter) -->
-        <meta-data
-            android:name="com.google.mlkit.vision.DEPENDENCIES"
-            android:value="subject_segment" />
     </application>
 
     <!-- url_launcher on Android 11+ needs explicit https query for social links -->

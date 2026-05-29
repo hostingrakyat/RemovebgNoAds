@@ -48,9 +48,9 @@ const Map<AppLang, Map<String, String>> _strings = {
     'no_recents': 'Your removed-background images will appear here.',
     'created_by': 'Created by: Ir. Riovan Styx Roring',
     'removing_bg': 'Removing background…',
-    'preparing_model': 'Preparing model (one-time, needs internet)…',
+    'preparing_model': 'Loading model…',
     'model_error':
-        'Could not prepare the segmentation model. It downloads once and needs internet the first time. Please connect and retry.',
+        'Something went wrong while processing this image. Please try again or pick another photo.',
     'retry': 'Retry',
     'no_subject':
         'No subject detected. Try another photo with a clearer foreground subject.',
@@ -98,9 +98,9 @@ const Map<AppLang, Map<String, String>> _strings = {
     'no_recents': 'Gambar tanpa latar Anda akan muncul di sini.',
     'created_by': 'Dibuat oleh: Ir. Riovan Styx Roring',
     'removing_bg': 'Menghapus latar…',
-    'preparing_model': 'Menyiapkan model (sekali, perlu internet)…',
+    'preparing_model': 'Memuat model…',
     'model_error':
-        'Tidak dapat menyiapkan model segmentasi. Model diunduh sekali dan perlu internet pertama kali. Sambungkan internet lalu coba lagi.',
+        'Terjadi kesalahan saat memproses gambar ini. Coba lagi atau pilih foto lain.',
     'retry': 'Coba lagi',
     'no_subject':
         'Tidak ada subjek terdeteksi. Coba foto lain dengan subjek depan yang lebih jelas.',

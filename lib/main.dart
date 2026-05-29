@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
 import 'l10n/strings.dart';
-import 'screens/model_gate.dart';
+import 'screens/splash_screen.dart';
 
 const Color kSeed = Color(0xFF6C4DF6);
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await loadSavedLang();
   runApp(const RemovebgApp());
 }
 
@@ -32,7 +33,7 @@ class RemovebgApp extends StatelessWidget {
               brightness: Brightness.dark,
             ),
           ),
-          home: const ModelGate(),
+          home: const SplashScreen(),
         );
       },
     );

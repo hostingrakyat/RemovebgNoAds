@@ -12,12 +12,10 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
 
-  # On-device segmentation (Google ML Kit Subject Segmentation).
-  # Pinned to 0.0.2: 0.0.3 requires Dart >=3.8 (Flutter >=3.32), but our proven
-  # stack is Flutter 3.24.5 / Dart 3.5.4. commons is forced to 0.11.0 for the
-  # same reason (0.11.1 requires Dart >=3.8). The API is identical.
-  google_mlkit_subject_segmentation: 0.0.2
-  google_mlkit_commons: 0.11.0
+  # On-device segmentation via ONNX Runtime + a bundled U^2-Net model
+  # (silueta.onnx, ~42 MB, shipped in assets). Fully offline, no Google Play
+  # Services and no first-run download. ffiPlugin; compatible with Dart 3.5.4.
+  onnxruntime: ^1.4.1
 
   # Image composition / mask->alpha / PNG-JPG encode
   image: ^4.2.0
@@ -52,3 +50,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/models/silueta.onnx

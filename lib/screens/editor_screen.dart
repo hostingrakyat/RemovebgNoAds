@@ -31,7 +31,7 @@ class EditorScreen extends StatefulWidget {
 enum _Stage { preparing, removing, ready, error, noSubject }
 
 class _EditorScreenState extends State<EditorScreen> {
-  final SegmentationService _seg = SegmentationService();
+  final SegmentationService _seg = SegmentationService.instance;
   final ImagePicker _picker = ImagePicker();
   final TransformationController _tc = TransformationController();
 
@@ -64,7 +64,6 @@ class _EditorScreenState extends State<EditorScreen> {
 
   @override
   void dispose() {
-    _seg.dispose();
     _previewUi?.dispose();
     _tc.dispose();
     super.dispose();
@@ -77,28 +76,14 @@ class _EditorScreenState extends State<EditorScreen> {
       final prepared = await Composer.prepare(_originalBytes);
       _prepared = prepared;
 
-      setState(() => _stage = _Stage.removing);
-
-      // The ML Kit subject-segmentation model downloads once on first use
-      // (needs internet that one time). Retry a few times with backoff while
-      // it finishes downloading, showing a "preparing model" state.
-      MaskData? mask;
-      var attempt = 0;
-      while (true) {
-        try {
-          mask = await _seg.segment(
-            widget.imagePath,
-            imageWidth: prepared.width,
-            imageHeight: prepared.height,
-          );
-          break;
-        } catch (e) {
-          attempt++;
-          if (attempt >= 4) rethrow;
-          if (mounted) setState(() => _stage = _Stage.preparing);
-          await Future.delayed(Duration(seconds: 2 * attempt));
-        }
-      }
+      // First call lazily loads the bundled ONNX model (~42 MB); show a
+      // "preparing model" state for that one-time setup, then segment.
+      if (mounted) setState(() => _stage = _Stage.preparing);
+      final mask = await _seg.segment(
+        widget.imagePath,
+        imageWidth: prepared.width,
+        imageHeight: prepared.height,
+      );
       if (mask == null) {
         setState(() => _stage = _Stage.noSubject);
         return;

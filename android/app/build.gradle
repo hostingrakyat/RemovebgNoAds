@@ -83,9 +83,3 @@ android {
 flutter {
     source = "../.."
 }
-
-dependencies {
-    // Native access for an explicit Play Services model install (ModuleInstallClient).
-    implementation "com.google.android.gms:play-services-mlkit-subject-segmentation:16.0.0-beta1"
-    implementation "com.google.android.gms:play-services-base:18.5.0"
-}
