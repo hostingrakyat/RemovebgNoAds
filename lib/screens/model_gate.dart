@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/strings.dart';
-import '../services/segmentation_service.dart';
+import '../services/model_installer.dart';
 import 'splash_screen.dart';
 
-/// Branded startup gate: detects / downloads the ML Kit model before the user
-/// reaches the language screen, with a graceful "Continue anyway" escape so the
-/// app is never stuck when offline.
+/// Branded startup gate: explicitly downloads / detects the ML Kit model via the
+/// native Play Services ModuleInstallClient before the language screen, with a
+/// progress bar and a "Continue anyway" escape so the app is never stuck.
 class ModelGate extends StatefulWidget {
   const ModelGate({super.key});
 
@@ -15,8 +15,8 @@ class ModelGate extends StatefulWidget {
 }
 
 class _ModelGateState extends State<ModelGate> {
-  final SegmentationService _seg = SegmentationService();
-  bool _ready = false;
+  int _progress = -1;
+  bool _failed = false;
   bool _showSkip = false;
   bool _navigated = false;
 
@@ -26,32 +26,42 @@ class _ModelGateState extends State<ModelGate> {
     _start();
   }
 
-  @override
-  void dispose() {
-    _seg.dispose();
-    super.dispose();
-  }
-
   Future<void> _start() async {
+    setState(() {
+      _failed = false;
+      _showSkip = false;
+      _progress = -1;
+    });
     await loadSavedLang();
     if (!mounted) return;
-    setState(() {});
-    // Reveal the "Continue anyway" escape after a few seconds.
+
+    if (await ModelInstaller.isAvailable()) {
+      _next();
+      return;
+    }
+
     Future.delayed(const Duration(seconds: 6), () {
-      if (mounted && !_ready) setState(() => _showSkip = true);
+      if (mounted && !_navigated) setState(() => _showSkip = true);
     });
-    // Patiently retry while the one-time model download completes.
-    for (var attempt = 0; attempt < 40; attempt++) {
-      final ok = await _seg.ensureReady();
+
+    await ModelInstaller.requestInstall();
+
+    // Poll for completion (~3 min budget).
+    for (var i = 0; i < 90; i++) {
+      await Future.delayed(const Duration(seconds: 2));
       if (!mounted) return;
-      if (ok) {
-        setState(() => _ready = true);
+      if (await ModelInstaller.isAvailable()) {
         _next();
         return;
       }
-      await Future.delayed(const Duration(seconds: 3));
+      final p = await ModelInstaller.progress();
+      if (mounted) setState(() => _progress = p);
+      if (await ModelInstaller.failed()) {
+        if (mounted) setState(() => _failed = true);
+        return;
+      }
     }
-    if (mounted) setState(() => _showSkip = true);
+    if (mounted) setState(() => _failed = true);
   }
 
   void _next() {
@@ -91,34 +101,83 @@ class _ModelGateState extends State<ModelGate> {
                         ),
                   ),
                   const SizedBox(height: 40),
-                  SizedBox(
-                    width: 28,
-                    height: 28,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 3,
-                      valueColor: AlwaysStoppedAnimation(cs.onPrimary),
+                  if (!_failed) ...[
+                    SizedBox(
+                      width: 200,
+                      child: _progress >= 0
+                          ? Column(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: LinearProgressIndicator(
+                                    value: _progress / 100.0,
+                                    minHeight: 8,
+                                    backgroundColor:
+                                        cs.onPrimary.withOpacity(0.2),
+                                    valueColor:
+                                        AlwaysStoppedAnimation(cs.onPrimary),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text('$_progress%',
+                                    style: TextStyle(color: cs.onPrimary)),
+                              ],
+                            )
+                          : SizedBox(
+                              height: 28,
+                              width: 28,
+                              child: Center(
+                                child: SizedBox(
+                                  width: 28,
+                                  height: 28,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 3,
+                                    valueColor:
+                                        AlwaysStoppedAnimation(cs.onPrimary),
+                                  ),
+                                ),
+                              ),
+                            ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    tr('downloading_model'),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        color: cs.onPrimary, fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    tr('downloading_model_sub'),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        color: cs.onPrimary.withOpacity(0.8), fontSize: 12),
-                  ),
+                    const SizedBox(height: 20),
+                    Text(
+                      tr('downloading_model'),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          color: cs.onPrimary, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      tr('downloading_model_sub'),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          color: cs.onPrimary.withOpacity(0.8), fontSize: 12),
+                    ),
+                  ] else ...[
+                    Icon(Icons.cloud_off,
+                        size: 44, color: cs.onPrimary.withOpacity(0.9)),
+                    const SizedBox(height: 16),
+                    Text(
+                      tr('model_error'),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: cs.onPrimary),
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: cs.onPrimary,
+                        foregroundColor: cs.primary,
+                      ),
+                      onPressed: _start,
+                      child: Text(tr('retry')),
+                    ),
+                  ],
                   const SizedBox(height: 28),
                   AnimatedOpacity(
-                    opacity: _showSkip ? 1 : 0,
+                    opacity: (_showSkip || _failed) ? 1 : 0,
                     duration: const Duration(milliseconds: 300),
                     child: TextButton(
-                      onPressed: _showSkip ? _next : null,
+                      onPressed: (_showSkip || _failed) ? _next : null,
                       style: TextButton.styleFrom(foregroundColor: cs.onPrimary),
                       child: Text('${tr('continue_anyway')}  →'),
                     ),
